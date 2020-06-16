@@ -15,7 +15,7 @@ public class RedisService {
 	JedisPool jedisPool;
 	
 	/**
-	 * 获取当个对象
+	 * 获取单个对象
 	 * */
 	public <T> T get(KeyPrefix prefix, String key,  Class<T> clazz) {
 		 Jedis jedis = null;
