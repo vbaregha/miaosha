@@ -7,10 +7,11 @@ import org.apache.ibatis.annotations.Select;
 
 import com.imooc.miaosha.domain.User;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 
 @Mapper
-@Component
+@Repository
 public interface UserDao {
 	
 	@Select("select * from user where id = #{id}")
