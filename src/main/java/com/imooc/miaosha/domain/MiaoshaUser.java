@@ -3,7 +3,6 @@ package com.imooc.miaosha.domain;
 import java.util.Date;
 
 public class MiaoshaUser {
-	
 	private Long id;
 	private String nickname;
 	private String password;
@@ -12,7 +11,6 @@ public class MiaoshaUser {
 	private Date registerDate;
 	private Date lastLoginDate;
 	private Integer loginCount;
-	
 	public Long getId() {
 		return id;
 	}
