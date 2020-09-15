@@ -2,14 +2,14 @@ package com.imooc.miaosha.vo;
 
 import javax.validation.constraints.NotNull;
 
+import com.imooc.miaosha.validator.IsMobile;
 import org.hibernate.validator.constraints.Length;
 
-import com.imooc.miaosha.util.ValidatorUtil;
 
 public class LoginVo {
 	
 	@NotNull
-	//@IsMobile
+	@IsMobile
 	private String mobile;
 	
 	@NotNull
