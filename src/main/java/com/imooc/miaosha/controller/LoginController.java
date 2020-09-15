@@ -22,7 +22,7 @@ public class LoginController {
 	private static Logger log = LoggerFactory.getLogger(LoginController.class);
 	
 	@Autowired
-	MiaoshaUserService userService;
+	MiaoshaUserService miaoshaUserService;
 	
 	@Autowired
 	RedisService redisService;
@@ -35,9 +35,11 @@ public class LoginController {
     @RequestMapping("/do_login")
     @ResponseBody
     public Result<Boolean> doLogin(HttpServletResponse response, @Valid LoginVo loginVo) {
-    	log.info(loginVo.toString());
-    	//登录
-    	userService.login(response, loginVo);
+    	//日志输出
+        log.info(loginVo.toString());
+    	//登录验证
+        miaoshaUserService.login(response, loginVo);
+
     	return Result.success(true);
     }
 }

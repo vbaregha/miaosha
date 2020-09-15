@@ -66,7 +66,7 @@ public class MiaoshaUserService {
 			throw new GlobalException(CodeMsg.PASSWORD_ERROR);
 		}
 		//生成cookie
-		String token	 = UUIDUtil.uuid();
+		String token = UUIDUtil.uuid();
 		addCookie(response, token, user);
 		return true;
 	}
