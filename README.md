@@ -236,3 +236,33 @@ public class GlobalExceptionHandler {
     }
 ```
 
+### 错误处理
+
+```java
+Template might not exist or might not be accessible
+```
+
+[处理方法](https://blog.csdn.net/liming_0820/article/details/80878168)
+
+```
+本人重新修改了Resouce目录，重新加载了一次，简直莫名其妙
+```
+
+#### 2.静态资源映射
+
+```java
+# 配置静态资源访问前缀
+#spring.mvc.static-path-pattern=/**
+# 配置静态资源路径，默认配置失效
+#spring.resources.static-locations[0]=classpath:/
+
+https://blog.csdn.net/u010358168/article/details/81205116
+# 配置静态资源访问前缀
+spring.mvc.static-path-pattern=/mystatic/**
+# 配置静态资源路径，默认配置失效
+spring.resources.static-locations[0]=classpath:/mystatic
+spring.resources.static-locations[1]=classpath:/public
+```
+
+删除配置后反而可以获取图片资源。。。
+
