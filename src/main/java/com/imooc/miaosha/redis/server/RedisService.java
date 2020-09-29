@@ -1,5 +1,6 @@
-package com.imooc.miaosha.redis;
+package com.imooc.miaosha.redis.server;
 
+import com.imooc.miaosha.redis.KeyPrefix;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +18,7 @@ public class RedisService {
 	/**
 	 * 获取单个对象
 	 * */
-	public <T> T get(KeyPrefix prefix, String key,  Class<T> clazz) {
+	public <T> T get(KeyPrefix prefix, String key, Class<T> clazz) {
 		 Jedis jedis = null;
 		 try {
 			 jedis =  jedisPool.getResource();

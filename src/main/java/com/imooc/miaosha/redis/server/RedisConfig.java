@@ -1,4 +1,4 @@
-package com.imooc.miaosha.redis;
+package com.imooc.miaosha.redis.server;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

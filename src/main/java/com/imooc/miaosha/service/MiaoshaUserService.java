@@ -11,7 +11,7 @@ import com.imooc.miaosha.dao.MiaoshaUserDao;
 import com.imooc.miaosha.domain.MiaoshaUser;
 import com.imooc.miaosha.exception.GlobalException;
 import com.imooc.miaosha.redis.MiaoshaUserKey;
-import com.imooc.miaosha.redis.RedisService;
+import com.imooc.miaosha.redis.server.RedisService;
 import com.imooc.miaosha.result.CodeMsg;
 import com.imooc.miaosha.util.MD5Util;
 import com.imooc.miaosha.util.UUIDUtil;
@@ -28,7 +28,12 @@ public class MiaoshaUserService {
 	
 	@Autowired
 	RedisService redisService;
-	
+
+	/**
+	 * 获取秒杀用户Id
+	 * @param id
+	 * @return
+	 */
 	public MiaoshaUser getById(long id) {
 		return miaoshaUserDao.getById(id);
 	}
@@ -45,8 +50,13 @@ public class MiaoshaUserService {
 		}
 		return user;
 	}
-	
 
+	/**
+	 * 登录校验
+	 * @param response
+	 * @param loginVo
+	 * @return
+	 */
 	public boolean login(HttpServletResponse response, LoginVo loginVo) {
 		if(loginVo == null) {
 			throw new GlobalException(CodeMsg.SERVER_ERROR);
@@ -67,10 +77,18 @@ public class MiaoshaUserService {
 		}
 		//生成cookie
 		String token = UUIDUtil.uuid();
+		//添加cookie
 		addCookie(response, token, user);
+
 		return true;
 	}
-	
+
+	/**
+	 * 设置token，存储于redis
+	 * @param response
+	 * @param token
+	 * @param user
+	 */
 	private void addCookie(HttpServletResponse response, String token, MiaoshaUser user) {
 		redisService.set(MiaoshaUserKey.token, token, user);
 		Cookie cookie = new Cookie(COOKI_NAME_TOKEN, token);
