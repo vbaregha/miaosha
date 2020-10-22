@@ -312,3 +312,25 @@ spring.resources.static-locations[1]=classpath:/public
 
 
 
+#### 3. 解决超卖
+
+```mysql
+update miaosha_goods 
+set stock_count = stock_count - 1 
+where goods_id = #{goodsId}
+```
+
+该语句并没有利用MySQL的排他锁例如：good_id > 0;
+
+#### 4.解决重复秒杀
+
+前端：
+
+前端禁止秒杀请求重复提交。
+
+后端：
+
+利用数据库建立唯一索引
+
+
+
