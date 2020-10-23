@@ -6,18 +6,170 @@
 
 
 
-## 集成MyBatis
+#### 集成MyBatis
 
 
 
 
 
-## 集成Redis
+### 集成Redis
 
+#### [通用缓存key的封装采用什么设计模式](https://github.com/qiurunze123/miaosha/blob/master/docs)
+
+```
+模板模式的优点
+-具体细节步骤实现定义在子类中，子类定义详细处理算法是不会改变算法整体结构
+-代码复用的基本技术，在数据库设计中尤为重要
+-存在一种反向的控制结构，通过一个父类调用其子类的操作，通过子类对父类进行扩展增加新的行为，符合“开闭原则”
+-缺点：　每个不同的实现都需要定义一个子类，会导致类的个数增加，系统更加庞大
+```
+
+以下是通用缓存key：
+
+```java
+public abstract class BasePrefix implements KeyPrefix{
+	
+	private int expireSeconds;
+	
+	private String prefix;
+	
+	public BasePrefix(String prefix) {//0代表永不过期
+		this(0, prefix);
+	}
+	
+	public BasePrefix( int expireSeconds, String prefix) {
+		this.expireSeconds = expireSeconds;
+		this.prefix = prefix;
+	}
+	
+	public int expireSeconds() {//默认0代表永不过期
+		return expireSeconds;
+	}
+
+	public String getPrefix() {
+		String className = getClass().getSimpleName();
+		return className+":" + prefix;
+	}
+
+}
+
+```
 
 
 
 ## 登录功能
+
+简易的登录注册功能的实现思路是：
+
+1.输入手机号、密码进行注册。如果未注册则插入新的MiaoshaUser。
+
+2.登录功能：
+
+- 用户将登录请求发送到服务端：请求包含用户手机、密码
+- 进行登录校验，验证手机号是否存在，若存在则进行密码校验。否则抛出异常，并进行全局异常拦截。
+- 生成一个随机UUID作为token（也就是sessionID），存在用户的cookie里，同时写服务端的redis缓存，保存用户已登录的信息。
+- 用户登陆后每次进行新的操作都更新缓存中的用户信息失效时间。
+
+```java
+	public boolean login(HttpServletResponse response, LoginVo loginVo) {
+		if(loginVo == null) {
+			throw new GlobalException(CodeMsg.SERVER_ERROR);
+		}
+		String mobile = loginVo.getMobile();
+		String formPass = loginVo.getPassword();
+		//判断手机号是否存在
+		MiaoshaUser user = getById(Long.parseLong(mobile));
+		if(user == null) {
+			throw new GlobalException(CodeMsg.MOBILE_NOT_EXIST);
+		}
+		//验证密码
+		String dbPass = user.getPassword();
+		String saltDB = user.getSalt();
+		String calcPass = MD5Util.formPassToDBPass(formPass, saltDB);
+		if(!calcPass.equals(dbPass)) {
+			throw new GlobalException(CodeMsg.PASSWORD_ERROR);
+		}
+		//生成cookie
+		String token = UUIDUtil.uuid();
+		//添加cookie
+		addCookie(response, token, user);
+
+		return true;
+	}
+```
+
+3.分布式session
+
+出现的场景：当秒杀业务有多个应用服务器时，如果只是使用原生的session来对连接进行用户标识，那么当同一个用户访问不同的应用服务器时，就会面临session信息丢失的问题。
+
+本质是还是利用session进行身份认证的一些细节。利用Redis的String数据结构，key可以是sessionID，value可以是user对象信息。
+
+```java
+	/**
+	 * 设置token，存储于redis
+	 * @param response
+	 * @param token
+	 * @param user
+	 */
+	private void addCookie(HttpServletResponse response, String token, MiaoshaUser user) {
+		redisService.set(MiaoshaUserKey.token, token, user);
+		Cookie cookie = new Cookie(COOKI_NAME_TOKEN, token);
+		cookie.setMaxAge(MiaoshaUserKey.token.expireSeconds());
+		cookie.setPath("/");
+		response.addCookie(cookie);
+	}
+```
+
+set方法传入的三个参数，使得redis可以通过key-value形式存储sessionID和UserInFo
+
+#### 简化登录的参数校验
+
+在SpringMVC框架提供的参数注入机制中，进行预处理，将传入的HttpRequest中携带的sessionID进行处理，获取userInfo，简化处理过程。避免传入HTTP Request和HttpResponse
+
+```java
+@Service
+public class UserArgumentResolver implements HandlerMethodArgumentResolver {
+
+	@Autowired
+	MiaoshaUserService userService;
+	
+	public boolean supportsParameter(MethodParameter parameter) {
+		Class<?> clazz = parameter.getParameterType();
+		return clazz==MiaoshaUser.class;
+	}
+
+	public Object resolveArgument(MethodParameter parameter, ModelAndViewContainer mavContainer,
+			NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
+		HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
+		HttpServletResponse response = webRequest.getNativeResponse(HttpServletResponse.class);
+		
+		String paramToken = request.getParameter(MiaoshaUserService.COOKI_NAME_TOKEN);
+		String cookieToken = getCookieValue(request, MiaoshaUserService.COOKI_NAME_TOKEN);
+		if(StringUtils.isEmpty(cookieToken) && StringUtils.isEmpty(paramToken)) {
+			return null;
+		}
+		String token = StringUtils.isEmpty(paramToken)?cookieToken:paramToken;
+		return userService.getByToken(response, token);
+	}
+
+	private String getCookieValue(HttpServletRequest request, String cookiName) {
+		Cookie[]  cookies = request.getCookies();
+		if(cookies == null || cookies.length <= 0){
+			return null;
+		}
+		for(Cookie cookie : cookies) {
+			if(cookie.getName().equals(cookiName)) {
+				return cookie.getValue();
+			}
+		}
+		return null;
+	}
+
+}
+```
+
+
+
 ### 两次MD5
 
 有成熟的框架可以替代两次MD5校验模式
@@ -144,6 +296,8 @@ public class IsMobileValidator implements ConstraintValidator<IsMobile, String> 
 
 }
 ```
+
+
 
 #### 全局异常处理
 
@@ -320,7 +474,7 @@ set stock_count = stock_count - 1
 where goods_id = #{goodsId}
 ```
 
-该语句并没有利用MySQL的排他锁例如：good_id > 0;
+该语句并没有利用MySQL的排他锁例如：stock_count > 0;
 
 #### 4.解决重复秒杀
 
